@@ -29,6 +29,7 @@ public:
 
 	~Pipeline();
 
+	void Bind(VkCommandBuffer commmandBuffer);
 	static PipelineConfigInfo DefaultPipelineConfigInfo(Extent extent);
 private:
 	void CreateGraphicsPipeline(const std::string& vertexPath, const std::string& fragmentPath, const PipelineConfigInfo& configInfo);

@@ -16,7 +16,7 @@ void Application::Run()
 
 void Application::Destroy()
 {
-	glfwDestroyWindow(_window.GetWindow());
+
 }
 
 bool Application::Init()

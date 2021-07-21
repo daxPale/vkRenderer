@@ -9,8 +9,13 @@ Pipeline::Pipeline(Device& device, const std::string& vertexPath, const std::str
 Pipeline::~Pipeline()
 {
 	vkDestroyShaderModule(_device.GetDevice(), _vertexShaderModule, nullptr);
-	vkDestroyShaderModule(_device.GetDevice(), _vertexShaderModule, nullptr);
+	vkDestroyShaderModule(_device.GetDevice(), _fragmentShaderModule, nullptr);
 	vkDestroyPipeline(_device.GetDevice(), _graphicsPipeline, nullptr);
+}
+
+void Pipeline::Bind(VkCommandBuffer commmandBuffer)
+{
+	vkCmdBindPipeline(commmandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
 }
 
 PipelineConfigInfo Pipeline::DefaultPipelineConfigInfo(Extent extent)
