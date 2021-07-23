@@ -5,7 +5,7 @@ class SwapChain {
 public:
 	static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
-	SwapChain(Device& device, Extent windowExtent);
+	SwapChain(Device& device, WindowExtent windowExtent);
 	~SwapChain();
 
 	SwapChain(const SwapChain&) = delete;

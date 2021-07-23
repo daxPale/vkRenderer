@@ -1,6 +1,6 @@
 #include "SwapChain.h"
 
-SwapChain::SwapChain(Device& device, Extent windowExtent)
+SwapChain::SwapChain(Device& device, WindowExtent windowExtent)
 	:_device{ device }, _windowExtent{ static_cast<uint32_t>(windowExtent.width), static_cast<uint32_t>(windowExtent.height) }
 {
 	CreateSwapChain();
@@ -169,10 +169,6 @@ void SwapChain::CreateSwapChain()
 		throw std::runtime_error("failed to create swap chain!");
 	}
 
-	// we only specified a minimum number of images in the swap chain, so the implementation is
-	// allowed to create a swap chain with more. That's why we'll first query the final number of
-	// images with vkGetSwapchainImagesKHR, then resize the container and finally call it again to
-	// retrieve the handles.
 	vkGetSwapchainImagesKHR(_device.GetDevice(), _swapChain, &imageCount, nullptr);
 	_swapChainImages.resize(imageCount);
 	vkGetSwapchainImagesKHR(_device.GetDevice(), _swapChain, &imageCount, _swapChainImages.data());
@@ -386,14 +382,6 @@ VkPresentModeKHR SwapChain::ChooseSwapPresentMode(const std::vector<VkPresentMod
 		}
 	}
 
-	// for (const auto &availablePresentMode : availablePresentModes) {
-	//   if (availablePresentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
-	//     std::cout << "Present mode: Immediate" << std::endl;
-	//     return availablePresentMode;
-	//   }
-	// }
-
-	std::cout << "Present mode: V-Sync" << std::endl;
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 

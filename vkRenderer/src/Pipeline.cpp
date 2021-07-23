@@ -18,7 +18,7 @@ void Pipeline::Bind(VkCommandBuffer commmandBuffer)
 	vkCmdBindPipeline(commmandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
 }
 
-PipelineConfigInfo Pipeline::DefaultPipelineConfigInfo(Extent extent)
+PipelineConfigInfo Pipeline::DefaultPipelineConfigInfo(WindowExtent extent)
 {
 	PipelineConfigInfo configInfo{};
 	configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -104,12 +104,14 @@ void Pipeline::CreateGraphicsPipeline(const std::string& vertexPath, const std::
 	shaderStages[1].pNext = nullptr;
 	shaderStages[1].pSpecializationInfo = nullptr;
 	
+	auto bindingDesc = Model::Vertex::GetBindingDescriptions();
+	auto attributeDesc = Model::Vertex::GetAttributeDescriptions();
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr;
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDesc.size());
+	vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDesc.size());
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDesc.data();
+	vertexInputInfo.pVertexBindingDescriptions = bindingDesc.data();
 
 	VkPipelineViewportStateCreateInfo viewportInfo{};
 	viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;

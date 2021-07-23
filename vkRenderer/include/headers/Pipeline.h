@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 #include "Device.h"
+#include "Model.h"
 
 struct PipelineConfigInfo
 {
@@ -30,7 +31,7 @@ public:
 	~Pipeline();
 
 	void Bind(VkCommandBuffer commmandBuffer);
-	static PipelineConfigInfo DefaultPipelineConfigInfo(Extent extent);
+	static PipelineConfigInfo DefaultPipelineConfigInfo(WindowExtent extent);
 private:
 	void CreateGraphicsPipeline(const std::string& vertexPath, const std::string& fragmentPath, const PipelineConfigInfo& configInfo);
 	void CreateShaderModule(const std::vector<char>& code, VkShaderModule* shaderModule);

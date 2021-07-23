@@ -22,10 +22,10 @@ struct QueueFamilyIndices
 class Device 
 {
 public:
-#ifdef NDEBUG
-	const bool enableValidationLayers = false;
-#else
+#ifdef _DEBUG
 	const bool enableValidationLayers = true;
+#else
+	const bool enableValidationLayers = false;
 #endif
 	Device(Window& window);
 

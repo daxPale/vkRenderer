@@ -1,19 +1,11 @@
 ﻿project(vkRenderer)
 
-option(USE_GL "Use_GL" OFF)
-option(USE_VULKAN "USE_VULKAN" ON)
-
+option(_DEBUG "Debug" On)
 
 if (USE_GL)
-  MESSAGE(STATUS "USE_GL")
-  add_definitions(-DUSE_GL)
+  MESSAGE(STATUS "Debug")
+  add_definitions(-DDEBUG)
 endif()
-
-if (USE_VULKAN)
-  MESSAGE(STATUS "USE_VULKAN")
-  add_definitions(-DUSE_VULKAN)
-endif()
-
 
 find_package(Vulkan REQUIRED)
 

@@ -1,15 +1,24 @@
 #include "vkRenderer.h"
 #include "Device.h"
 #include "SwapChain.h"
+#include "Model.h"
 
 int main()
 {
 	//Application
-	Application app(1200, 720, "Renderer");
-	
+	Application app(1920, 1080, "Renderer");
+
 	//Device
 	Device device(app.GetWindow());
 	
+	//Model
+	std::vector<Model::Vertex> vertices{
+		{{0.0f, -0.5f}},
+		{{0.5f, 0.5f}},
+		{{-0.5f, 0.5f}}
+	};
+	Model model(device, vertices);
+
 	//Swap Chain
 	SwapChain swapChain(device, app.GetWindow().GetExtent());
 
@@ -75,13 +84,15 @@ int main()
 		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 		pipeline.Bind(commandBuffers[i]);
-		vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+		model.Bind(commandBuffers[i]);
+		model.Draw(commandBuffers[i]);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
 			throw std::runtime_error("failed to record command buffer!");
 		}
 	}
+		
 	// 	app.Run();
 	while (!app.GetWindow().ShouldClose())
 	{

@@ -1,7 +1,7 @@
 #pragma once
 #include "pch.h"
 
-struct Extent {
+struct WindowExtent {
 	int width;
 	int height;
 };
@@ -23,14 +23,14 @@ public:
 	HWND GetHandle() { return _handle; }
 	HINSTANCE GetInstance() { return _hInstance; }
 	bool ShouldClose() { return glfwWindowShouldClose(_window); }
-	Extent GetExtent() { return _extent; }
+	WindowExtent GetExtent() { return _extent; }
 private:
 	void InitWindow();
 private:
 	int _width;
 	int _height;
 	std::string _name;
-	Extent _extent;
+	WindowExtent _extent;
 	GLFWwindow* _window;
 	HWND _handle;
 	HINSTANCE _hInstance;
