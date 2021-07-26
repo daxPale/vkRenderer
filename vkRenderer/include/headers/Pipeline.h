@@ -5,13 +5,18 @@
 
 struct PipelineConfigInfo
 {
-	VkViewport viewport;
-	VkRect2D scissor;
+	PipelineConfigInfo(const PipelineConfigInfo&) = delete;
+	PipelineConfigInfo& operator=(const PipelineConfigInfo&) = delete;
+
+	VkPipelineViewportStateCreateInfo viewportInfo;
 	VkPipelineColorBlendAttachmentState colorBlendAttachment;
+	VkPipelineColorBlendStateCreateInfo colorBlendInfo;
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
 	VkPipelineRasterizationStateCreateInfo rasterizationInfo;
 	VkPipelineMultisampleStateCreateInfo multisampleInfo;
 	VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
+	std::vector<VkDynamicState> dynamicStateEnables;
+	VkPipelineDynamicStateCreateInfo dynamicStateInfo;
 	VkPipelineLayout pipelineLayout = nullptr;
 	VkRenderPass renderPass = nullptr;
 	uint32_t subpass = 0;
@@ -31,7 +36,7 @@ public:
 	~Pipeline();
 
 	void Bind(VkCommandBuffer commmandBuffer);
-	static PipelineConfigInfo DefaultPipelineConfigInfo(WindowExtent extent);
+	static void DefaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
 private:
 	void CreateGraphicsPipeline(const std::string& vertexPath, const std::string& fragmentPath, const PipelineConfigInfo& configInfo);
 	void CreateShaderModule(const std::vector<char>& code, VkShaderModule* shaderModule);

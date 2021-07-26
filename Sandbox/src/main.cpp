@@ -2,7 +2,6 @@
 
 int main()
 {
-	//Application
 	Application app(1920, 1080, "Renderer");
 
 	app.Run();

@@ -3,10 +3,9 @@
 Graphics::Graphics(Window& window)
 	:_window(window)
 {
-	_swapChain = std::make_unique<SwapChain>(_device,_window.GetExtent());
 	CreatePipelineLayout();
-	CreatePipeline();
-	CreateCommandBuffer();
+	RecreateSwapChain();
+	CreateCommandBuffers();
 }
 
 Graphics::~Graphics()
@@ -18,14 +17,49 @@ void Graphics::DrawFrame()
 {
 	uint32_t imageIndex;
 	auto result = _swapChain->AcquireNextImage(&imageIndex);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		RecreateSwapChain();
+		return;
+	}
+
 	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
 		throw std::runtime_error("failed to acquire swap chain image!");
+	}
+
+	RecordCommandBuffer(imageIndex);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || _window.WasWindowResized()) {
+		_window.ResetWindowResizedFlag();
+		RecreateSwapChain();                                                                                                                                                                
+		return;
 	}
 
 	result = _swapChain->SubmitCommandBuffers(&_commandBuffers[imageIndex], &imageIndex);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error("failed to present swap chain image!");
 	}
+}
+
+void Graphics::RecreateSwapChain()
+{
+	auto extent = _window.GetExtent();
+	while (extent.width == 0 || extent.height == 0)
+	{
+		extent = _window.GetExtent();
+		glfwWaitEvents();
+	}
+
+	WaitIdle();
+	if (_swapChain == nullptr) {
+		_swapChain = std::make_unique<SwapChain>(_device, extent);
+	}else{
+		_swapChain = std::make_unique<SwapChain>(_device, extent, std::move(_swapChain));
+		if (_swapChain->ImageCount() != _commandBuffers.size()) {
+			FreeCommandBuffers();
+			CreateCommandBuffers();
+		}
+	}
+		
+	CreatePipeline();
 }
 
 void Graphics::CreatePipelineLayout()
@@ -44,8 +78,9 @@ void Graphics::CreatePipelineLayout()
 
 void Graphics::CreatePipeline()
 {
-	auto pipelineConfig = Pipeline::DefaultPipelineConfigInfo(_window.GetExtent());
-	pipelineConfig.renderPass = _swapChain->GetRenderPass(); 
+	PipelineConfigInfo pipelineConfig{};
+	Pipeline::DefaultPipelineConfigInfo(pipelineConfig);
+	pipelineConfig.renderPass = _swapChain->GetRenderPass();
 	pipelineConfig.pipelineLayout = _pipelineLayout;
 
 	_pipeline = std::make_unique<Pipeline>(_device,
@@ -54,7 +89,7 @@ void Graphics::CreatePipeline()
 					pipelineConfig);
 }
 
-void Graphics::CreateCommandBuffer()
+void Graphics::CreateCommandBuffers()
 {
 	_commandBuffers.resize(_swapChain->ImageCount());
 
@@ -68,38 +103,60 @@ void Graphics::CreateCommandBuffer()
 		VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}
+}
 
-	for (int i = 0; i < _commandBuffers.size(); i++) {
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+void Graphics::RecordCommandBuffer(int imageIndex)
+{
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-		if (vkBeginCommandBuffer(_commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-			throw std::runtime_error("failed to begin recording command buffer!");
-		}
-
-		VkRenderPassBeginInfo renderPassInfo{};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = _swapChain->GetRenderPass();
-		renderPassInfo.framebuffer = _swapChain->GetFrameBuffer(i);
-
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = _swapChain->GetSwapChainExtent();
-
-		std::array<VkClearValue, 2> clearValues{};
-		clearValues[0].color = { 0.1f, 0.1f, 0.1f, 1.0f };
-		clearValues[1].depthStencil = { 1.0f, 0 };
-		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-		renderPassInfo.pClearValues = clearValues.data();
-
-		vkCmdBeginRenderPass(_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		_pipeline->Bind(_commandBuffers[i]);
-		_model.Bind(_commandBuffers[i]);
-		_model.Draw(_commandBuffers[i]);
-
-		vkCmdEndRenderPass(_commandBuffers[i]);
-		if (vkEndCommandBuffer(_commandBuffers[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to record command buffer!");
-		}
+	if (vkBeginCommandBuffer(_commandBuffers[imageIndex], &beginInfo) != VK_SUCCESS) {
+		throw std::runtime_error("failed to begin recording command buffer!");
 	}
+
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = _swapChain->GetRenderPass();
+	renderPassInfo.framebuffer = _swapChain->GetFrameBuffer(imageIndex);
+
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = _swapChain->GetSwapChainExtent();
+
+	std::array<VkClearValue, 2> clearValues{};
+	clearValues[0].color = { 0.1f, 0.1f, 0.1f, 1.0f };
+	clearValues[1].depthStencil = { 1.0f, 0 };
+	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+	renderPassInfo.pClearValues = clearValues.data();
+
+	vkCmdBeginRenderPass(_commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = static_cast<float>(_swapChain->GetSwapChainExtent().width);
+	viewport.height = static_cast<float>(_swapChain->GetSwapChainExtent().height);
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	VkRect2D scissor{ {0, 0}, _swapChain->GetSwapChainExtent() };
+	vkCmdSetViewport(_commandBuffers[imageIndex], 0, 1, &viewport);
+	vkCmdSetScissor(_commandBuffers[imageIndex], 0, 1, &scissor);
+
+	_pipeline->Bind(_commandBuffers[imageIndex]);  
+	_model.Bind(_commandBuffers[imageIndex]);
+	_model.Draw(_commandBuffers[imageIndex]);
+
+	vkCmdEndRenderPass(_commandBuffers[imageIndex]);
+	if (vkEndCommandBuffer(_commandBuffers[imageIndex]) != VK_SUCCESS) {
+		throw std::runtime_error("failed to record command buffer!");
+	}
+}
+
+void Graphics::FreeCommandBuffers()
+{
+	vkFreeCommandBuffers(
+		_device.GetDevice(),
+		_device.GetCommandPool(),
+		static_cast<uint32_t>(_commandBuffers.size()),
+		_commandBuffers.data());
+	_commandBuffers.clear();
 }

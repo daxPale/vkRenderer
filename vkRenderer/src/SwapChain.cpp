@@ -3,12 +3,14 @@
 SwapChain::SwapChain(Device& device, WindowExtent windowExtent)
 	:_device{ device }, _windowExtent{ static_cast<uint32_t>(windowExtent.width), static_cast<uint32_t>(windowExtent.height) }
 {
-	CreateSwapChain();
-	CreateImageViews();
-	CreateRenderPass();
-	CreateDepthResources();
-	CreateFramebuffers();
-	CreateSyncObjects();
+	Init();
+}
+
+SwapChain::SwapChain(Device& device, WindowExtent windowExtent, std::shared_ptr<SwapChain> previous)
+	:_device{ device }, _windowExtent{ static_cast<uint32_t>(windowExtent.width), static_cast<uint32_t>(windowExtent.height) }, _oldSwapChain(previous)
+{
+	Init();
+	_oldSwapChain = nullptr;
 }
 
 SwapChain::~SwapChain()
@@ -118,6 +120,16 @@ VkResult SwapChain::SubmitCommandBuffers(const VkCommandBuffer* buffers, uint32_
 	return result;
 }
 
+void SwapChain::Init()
+{
+	CreateSwapChain();
+	CreateImageViews();
+	CreateRenderPass();
+	CreateDepthResources();
+	CreateFramebuffers();
+	CreateSyncObjects();
+}
+
 void SwapChain::CreateSwapChain()
 {
 	SwapChainSupportDetails swapChainSupport = _device.GetSwapChainSupport();
@@ -163,7 +175,7 @@ void SwapChain::CreateSwapChain()
 	createInfo.presentMode = presentMode;
 	createInfo.clipped = VK_TRUE;
 
-	createInfo.oldSwapchain = VK_NULL_HANDLE;
+	createInfo.oldSwapchain = _oldSwapChain == nullptr ? VK_NULL_HANDLE : _oldSwapChain->_swapChain;
 
 	if (vkCreateSwapchainKHR(_device.GetDevice(), &createInfo, nullptr, &_swapChain) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create swap chain!");

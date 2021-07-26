@@ -24,9 +24,12 @@ public:
 	void WaitIdle() { vkDeviceWaitIdle(_device.GetDevice()); }
 	void DrawFrame();
 private:
+	void RecreateSwapChain();
 	void CreatePipelineLayout();
 	void CreatePipeline();
-	void CreateCommandBuffer();
+	void CreateCommandBuffers();
+	void RecordCommandBuffer(int imageIndex);
+	void FreeCommandBuffers();
 
 	Window& _window;
 	Device _device{_window};
