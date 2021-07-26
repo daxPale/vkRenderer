@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "Window.h"
 #include "Pipeline.h"
+#include "Graphics.h"
 
 class Application {
 public:
@@ -18,11 +19,10 @@ public:
 	bool Init();
 	void Run();
 	void Destroy();
-
-	Window& GetWindow() { return _window; }
 private:
 	int _width;
 	int _height;
 	std::string _name;
 	Window _window{ _width, _height, _name };
+	Graphics _graphics{ _window };
 };

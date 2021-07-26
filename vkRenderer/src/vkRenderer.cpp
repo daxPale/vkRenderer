@@ -11,12 +11,13 @@ void Application::Run()
 	while (!_window.ShouldClose())
 	{
 		glfwPollEvents();
+		_graphics.DrawFrame();
 	}
 }
 
 void Application::Destroy()
 {
-
+	_graphics.WaitIdle();
 }
 
 bool Application::Init()
