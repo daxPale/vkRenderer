@@ -20,9 +20,20 @@ void Window::InitWindow()
 	assert(rc);
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
 	_window = glfwCreateWindow(_width, _height, _name.c_str(), 0, 0);
 	assert(_window);
+
+	glfwSetWindowUserPointer(_window, this);
+	glfwSetFramebufferSizeCallback(_window, FramebufferResizedCallback);
+}
+
+void Window::FramebufferResizedCallback(GLFWwindow* window, int width, int height)
+{
+	auto windowPtr = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	windowPtr->_framebufferResized = true;
+	windowPtr->_width = width;
+	windowPtr->_height = height;
 }
 

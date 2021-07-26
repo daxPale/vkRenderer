@@ -13,14 +13,14 @@ int main()
 	
 	//Model
 	std::vector<Model::Vertex> vertices{
-		{{0.0f, -0.5f}},
-		{{0.5f, 0.5f}},
-		{{-0.5f, 0.5f}}
+		{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{-0.5f, 0.5f}, {1.0f, 0.0f, 1.0f}}
 	};
 	Model model(device, vertices);
 
 	//Swap Chain
-	SwapChain swapChain(device, app.GetWindow().GetExtent());
+	std::unique_ptr<SwapChain> swapChain = std::make_unique<SwapChain>(device, app.GetWindow().GetExtent());
 
 	//Pipeline
 	VkPipelineLayoutCreateInfo layoutCreateInfo{};
@@ -36,7 +36,7 @@ int main()
 	}
 
 	auto pipelineConfig = Pipeline::DefaultPipelineConfigInfo(app.GetWindow().GetExtent());
-	pipelineConfig.renderPass = swapChain.GetRenderPass(); 
+	pipelineConfig.renderPass = swapChain->GetRenderPass(); 
 	pipelineConfig.pipelineLayout = pipelineLayout;
 
 	Pipeline pipeline(device, 
@@ -46,7 +46,7 @@ int main()
 
 	//CommandBuffer
 	std::vector<VkCommandBuffer> commandBuffers;
-	commandBuffers.resize(swapChain.ImageCount());
+	commandBuffers.resize(swapChain->ImageCount());
 
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -69,11 +69,11 @@ int main()
 
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = swapChain.GetRenderPass();
-		renderPassInfo.framebuffer = swapChain.GetFrameBuffer(i);
+		renderPassInfo.renderPass = swapChain->GetRenderPass();
+		renderPassInfo.framebuffer = swapChain->GetFrameBuffer(i);
 
 		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = swapChain.GetSwapChainExtent();
+		renderPassInfo.renderArea.extent = swapChain->GetSwapChainExtent();
 
 		std::array<VkClearValue, 2> clearValues{};
 		clearValues[0].color = { 0.1f, 0.1f, 0.1f, 1.0f };
@@ -98,12 +98,12 @@ int main()
 	{
 		glfwPollEvents();
 		uint32_t imageIndex;
-		auto result = swapChain.AcquireNextImage(&imageIndex);
+		auto result = swapChain->AcquireNextImage(&imageIndex);
 		if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
 			throw std::runtime_error("failed to acquire swap chain image!");
 		}
 
-		result = swapChain.SubmitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
+		result = swapChain->SubmitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
 		if (result != VK_SUCCESS) {
 			throw std::runtime_error("failed to present swap chain image!");
 		}
