@@ -25,7 +25,7 @@ public:
 	bool ShouldClose() { return glfwWindowShouldClose(_window); }
 	bool WasWindowResized() { return _framebufferResized; }
 	void ResetWindowResizedFlag() { _framebufferResized = false; }
-	WindowExtent GetExtent() { return _extent; }
+	WindowExtent GetExtent() { return WindowExtent{_width, _height}; }
 private:
 	void InitWindow();
 	static void FramebufferResizedCallback(GLFWwindow* window, int width, int height);
@@ -34,7 +34,6 @@ private:
 	int _height;
 	std::string _name;
 	bool _framebufferResized = false;
-	WindowExtent _extent;
 	GLFWwindow* _window;
 	HWND _handle;
 	HINSTANCE _hInstance;

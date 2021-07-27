@@ -17,7 +17,8 @@ void Graphics::DrawFrame()
 {
 	uint32_t imageIndex;
 	auto result = _swapChain->AcquireNextImage(&imageIndex);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+	if (result == VK_ERROR_OUT_OF_DATE_KHR) 
+	{
 		RecreateSwapChain();
 		return;
 	}
@@ -27,7 +28,8 @@ void Graphics::DrawFrame()
 	}
 
 	RecordCommandBuffer(imageIndex);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || _window.WasWindowResized()) {
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || _window.WasWindowResized()) 
+	{
 		_window.ResetWindowResizedFlag();
 		RecreateSwapChain();                                                                                                                                                                
 		return;
@@ -49,11 +51,14 @@ void Graphics::RecreateSwapChain()
 	}
 
 	WaitIdle();
-	if (_swapChain == nullptr) {
+	if (_swapChain == nullptr) 
+	{
 		_swapChain = std::make_unique<SwapChain>(_device, extent);
-	}else{
+	}else
+	{
 		_swapChain = std::make_unique<SwapChain>(_device, extent, std::move(_swapChain));
-		if (_swapChain->ImageCount() != _commandBuffers.size()) {
+		if (_swapChain->ImageCount() != _commandBuffers.size()) 
+		{
 			FreeCommandBuffers();
 			CreateCommandBuffers();
 		}
@@ -99,8 +104,7 @@ void Graphics::CreateCommandBuffers()
 	allocInfo.commandPool = _device.GetCommandPool();
 	allocInfo.commandBufferCount = static_cast<uint32_t>(_commandBuffers.size());
 
-	if (vkAllocateCommandBuffers(_device.GetDevice(), &allocInfo, _commandBuffers.data()) !=
-		VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(_device.GetDevice(), &allocInfo, _commandBuffers.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}
 }

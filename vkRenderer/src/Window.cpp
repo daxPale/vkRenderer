@@ -1,7 +1,7 @@
 #include "Window.h"
 
 Window::Window(int width, int height, const std::string& name)
-	:_width(width), _height(height), _name(name), _extent{width, height}
+	:_width(width), _height(height), _name(name)
 {
 	InitWindow();
 	_handle = glfwGetWin32Window(_window);
