@@ -49,81 +49,6 @@ SwapChain::~SwapChain()
 	}
 }
 
-VkFormat SwapChain::FindDepthFormat()
-{
-	return _device.FindSupportedFormat(
-		{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-		VK_IMAGE_TILING_OPTIMAL, 
-		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-}
-
-VkResult SwapChain::AcquireNextImage(uint32_t* imageIndex)
-{
-	vkWaitForFences(
-		_device.GetDevice(),
-		1,
-		&_inFlightFences[currentFrame],
-		VK_TRUE,
-		std::numeric_limits<uint64_t>::max());
-
-	VkResult result = vkAcquireNextImageKHR(
-		_device.GetDevice(),
-		_swapChain,
-		std::numeric_limits<uint64_t>::max(),
-		_imageAvailableSemaphores[currentFrame],  // must be a not signaled semaphore
-		VK_NULL_HANDLE,
-		imageIndex);
-
-	return result;
-}
-
-VkResult SwapChain::SubmitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex)
-{
-	if (_imagesInFlight[*imageIndex] != VK_NULL_HANDLE) {
-		vkWaitForFences(_device.GetDevice(), 1, &_imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
-	}
-	_imagesInFlight[*imageIndex] = _inFlightFences[currentFrame];
-
-	VkSubmitInfo submitInfo = {};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-	VkSemaphore waitSemaphores[] = { _imageAvailableSemaphores[currentFrame] };
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = buffers;
-
-	VkSemaphore signalSemaphores[] = { _renderFinishedSemaphores[currentFrame] };
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
-
-	vkResetFences(_device.GetDevice(), 1, &_inFlightFences[currentFrame]);
-	if (vkQueueSubmit(_device.GetGraphicsQueue(), 1, &submitInfo, _inFlightFences[currentFrame]) != VK_SUCCESS) {
-		throw std::runtime_error("failed to submit draw command buffer!");
-	}
-
-	VkPresentInfoKHR presentInfo = {};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalSemaphores;
-
-	VkSwapchainKHR swapChains[] = { _swapChain };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-
-	presentInfo.pImageIndices = imageIndex;
-
-	auto result = vkQueuePresentKHR(_device.GetPesentQueue(), &presentInfo);
-
-	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-
-	return result;
-}
-
 void SwapChain::Init()
 {
 	CreateSwapChain();
@@ -143,7 +68,7 @@ void SwapChain::CreateSwapChain()
 	VkExtent2D extent = ChooseSwapExtent(swapChainSupport.capabilities);
 
 	uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) 
+	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
 	{
 		imageCount = swapChainSupport.capabilities.maxImageCount;
 	}
@@ -196,7 +121,7 @@ void SwapChain::CreateSwapChain()
 void SwapChain::CreateImageViews()
 {
 	_swapChainImageViews.resize(_swapChainImages.size());
-	for (size_t i = 0; i < _swapChainImages.size(); i++) 
+	for (size_t i = 0; i < _swapChainImages.size(); i++)
 	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -225,7 +150,7 @@ void SwapChain::CreateDepthResources()
 	_depthImageMemorys.resize(ImageCount());
 	_depthImageViews.resize(ImageCount());
 
-	for (int i = 0; i < _depthImages.size(); i++) 
+	for (int i = 0; i < _depthImages.size(); i++)
 	{
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -331,7 +256,7 @@ void SwapChain::CreateRenderPass()
 void SwapChain::CreateFramebuffers()
 {
 	_swapChainFramebuffers.resize(ImageCount());
-	for (size_t i = 0; i < ImageCount(); i++) 
+	for (size_t i = 0; i < ImageCount(); i++)
 	{
 		std::array<VkImageView, 2> attachments = { _swapChainImageViews[i], _depthImageViews[i] };
 
@@ -369,7 +294,7 @@ void SwapChain::CreateSyncObjects()
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		if (vkCreateSemaphore(_device.GetDevice(), &semaphoreInfo, nullptr, &_imageAvailableSemaphores[i]) != VK_SUCCESS ||
 			vkCreateSemaphore(_device.GetDevice(), &semaphoreInfo, nullptr, &_renderFinishedSemaphores[i]) != VK_SUCCESS ||
@@ -377,6 +302,81 @@ void SwapChain::CreateSyncObjects()
 			throw std::runtime_error("failed to create synchronization objects for a frame!");
 		}
 	}
+}
+
+VkFormat SwapChain::FindDepthFormat()
+{
+	return _device.FindSupportedFormat(
+		{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+		VK_IMAGE_TILING_OPTIMAL, 
+		VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+}
+
+VkResult SwapChain::AcquireNextImage(uint32_t* imageIndex)
+{
+	vkWaitForFences(
+		_device.GetDevice(),
+		1,
+		&_inFlightFences[currentFrame],
+		VK_TRUE,
+		std::numeric_limits<uint64_t>::max());
+
+	VkResult result = vkAcquireNextImageKHR(
+		_device.GetDevice(),
+		_swapChain,
+		std::numeric_limits<uint64_t>::max(),
+		_imageAvailableSemaphores[currentFrame],  // must be a not signaled semaphore
+		VK_NULL_HANDLE,
+		imageIndex);
+
+	return result;
+}
+
+VkResult SwapChain::SubmitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex)
+{
+	if (_imagesInFlight[*imageIndex] != VK_NULL_HANDLE) {
+		vkWaitForFences(_device.GetDevice(), 1, &_imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
+	}
+	_imagesInFlight[*imageIndex] = _inFlightFences[currentFrame];
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	VkSemaphore waitSemaphores[] = { _imageAvailableSemaphores[currentFrame] };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = buffers;
+
+	VkSemaphore signalSemaphores[] = { _renderFinishedSemaphores[currentFrame] };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	vkResetFences(_device.GetDevice(), 1, &_inFlightFences[currentFrame]);
+	if (vkQueueSubmit(_device.GetGraphicsQueue(), 1, &submitInfo, _inFlightFences[currentFrame]) != VK_SUCCESS) {
+		throw std::runtime_error("failed to submit draw command buffer!");
+	}
+
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+
+	VkSwapchainKHR swapChains[] = { _swapChain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+
+	presentInfo.pImageIndices = imageIndex;
+
+	auto result = vkQueuePresentKHR(_device.GetPesentQueue(), &presentInfo);
+
+	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+	return result;
 }
 
 VkSurfaceFormatKHR SwapChain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)

@@ -1,7 +1,6 @@
 #pragma once
 #include "pch.h"
 #include "Window.h"
-#include "Pipeline.h"
 #include "Graphics.h"
 
 class Application {

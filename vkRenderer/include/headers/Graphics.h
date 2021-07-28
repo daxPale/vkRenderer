@@ -21,6 +21,16 @@ public:
 	Graphics& operator=(const Graphics&) = delete;
 	Graphics& operator=(Graphics&&) = delete;
 
+	VkRenderPass GetSwapChainRenderPass() const { return _swapChain->GetRenderPass(); }
+	VkCommandBuffer GetCurrentCommandBuffer() const { return _commandBuffers[_currentFrameIndex]; }
+	bool IsFrameInProgress() const { return _isFrameStarted; }
+	int GetFrameIndex() const { return _currentFrameIndex; }
+
+	VkCommandBuffer BeginFrame();
+	void EndFrame();
+	void BeginRenderPass(VkCommandBuffer commandBuffer);
+	void EndRenderPass(VkCommandBuffer commandBuffer);
+
 	void WaitIdle() { vkDeviceWaitIdle(_device.GetDevice()); }
 	void DrawFrame();
 private:
@@ -37,6 +47,10 @@ private:
 	VkPipelineLayout _pipelineLayout;
 	std::unique_ptr<Pipeline> _pipeline;
 	std::vector<VkCommandBuffer> _commandBuffers;
+
+	uint32_t _currentImageIndex;
+	int _currentFrameIndex = 0;
+	bool _isFrameStarted = false;
 
 	Model _model {_device, vertices};
 };
